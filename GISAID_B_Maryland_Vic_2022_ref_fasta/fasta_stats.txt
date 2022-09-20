@@ -1,0 +1,4 @@
+file                                                     format  type  num_seqs  sum_len  min_len  avg_len  max_len
+B:Vic:HA:Maryland-isolates:gisaid_epiflu_sequence.fasta  FASTA   DNA        142  260,809    1,758  1,836.7    1,856
+B:Vic:NA:Maryland-isolates:gisaid_epiflu_sequence.fasta  FASTA   DNA        142  214,130    1,401    1,508    1,529
+B:Vic:NS:Maryland-isolates:gisaid_epiflu_sequence.fasta  FASTA   DNA        140  148,535    1,024    1,061    1,071
