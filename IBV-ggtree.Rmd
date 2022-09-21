@@ -4,7 +4,7 @@ description: "GISAID Collection of IBV strains from B/Victoria and B/Yamagata"
 output: html_notebook
 ---
 
-# IBV Lineage Comparison
+# IBV Lineage Comparison 
 
 ## Data collection
 
@@ -15,11 +15,20 @@ Sequence were aquired from GISAID in August of 2022 with the following filters:
   
 ## Sequence alignment and tree building
 
-Sequences were aligned using ClustalO. Phylogenetic trees were constructed using RAxML 
+* Sequences were aligned using ClustalO in Geneious Prime. Phylogenetic trees were constructed using RAxML. 
+* Export phylogenetic trees in .nexus format.
+* https://guangchuangyu.github.io/ggtree-book/chapter-ggtree.html
+* https://yulab-smu.top/treedata-book/chapter13.html
+* https://yulab-smu.top/treedata-book/faq.html#faq-local-file
+* https://yulab-smu.top/treedata-book/chapter12.html
+* https://www.biostars.org/p/312389/
+* https://groups.google.com/g/bioc-ggtree/c/Ciy4Fh_7hl4
+* https://bioconductor.statistik.tu-dortmund.de/packages/3.6/bioc/vignettes/ggtree/inst/doc/treeAnnotation.html
+* https://bioconnector.github.io/workshops/r-ggtree.html#labeling_clades
 
 ## Plot using ggtree
 
-```{r, install ggtree}
+```{r, install ggtree if needed}
 
 #ggtree Test 
 #install 
@@ -27,118 +36,20 @@ if (!require("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
 
 BiocManager::install("YuLab-SMU/treedataverse") #includes ggtree along with other essential packages
-
 # browseVignettes("ggtree") #essnetial guide for tree browsing
+
 ```
-
-https://guangchuangyu.github.io/ggtree-book/chapter-ggtree.html
-https://yulab-smu.top/treedata-book/chapter13.html
-https://yulab-smu.top/treedata-book/faq.html#faq-local-file
-https://yulab-smu.top/treedata-book/chapter12.html
-https://www.biostars.org/p/312389/
-https://groups.google.com/g/bioc-ggtree/c/Ciy4Fh_7hl4
-https://bioconductor.statistik.tu-dortmund.de/packages/3.6/bioc/vignettes/ggtree/inst/doc/treeAnnotation.html
-https://bioconnector.github.io/workshops/r-ggtree.html#labeling_clades
-
-# Building HA Tree
+# Building the HA Tree
 
 **Be sure to ROOT all trees in Geneius before importing here** 
 
-B/Victoria vs B/Yamagata
+B/Victoria vs B/Yamagata HA Tree B/Phuket/2013
 
 Still missing B/Yamagata Sequences
   - R0337 - aquired from Amanda on September 15th - sequenced with some of David Sullivan's strains.  
   - R0225 - provided by Hsuan. 
 
-```{r, IBVHA nucleotide tree - trial}
-library(knitr)
-library(treedataverse)
-library(ggtree)
-library(ggimage)
-library(tidytree)
-
-file_HAnewick <-  "./tree_builds/B_Vic_B_Yam_HA_Maryland_epiflu_isolates_gisaid_NJ_cs.newick"
-
-#Importing newick file
-HAnewick <- read.newick(file_HAnewick, node.label = "label") #import newick tree
-print(HAnewick)
-
-pHA <-  ggtree(HAnewick)
-
-pHA_annot <- pHA + 
-  geom_cladelab(node=253, label="B/Victoria", color='red', align = TRUE, barsize = 1, align=TRUE, angle=270, hjust='center', offset.text=.002) +
-  theme_tree2() + 
-  geom_cladelab(node=358, label="B/Yamagata", color='blue', barsize = 1, align=TRUE, angle=270, hjust='center', offset.text= 0.002, offset= 0, fontsize = 4 )
-
-
-pHA_annot 
-
-
-#geom_text(aes(label=node)) #adds node number to identify
-
-#nodes
-#251 - Vic vs Yam
-# 393 - yam
-# 252 - vic
-
-
-```
-```{r, IBV HA NJ tree with 3/4 Study Strains OLD - reference}
-
-library(knitr)
-library(treedataverse)
-library(ggtree)
-library(ggimage)
-library(tidytree)
-library(ggrepel)
-
-file_HA_NJ_newick <- "./tree_builds/B_Vic_B_Yam_HA_Maryland_epiflu_isolates_gisaid_NJ_cs.newick"
-
-HA_NJ_newick <- read.newick(file_HA_NJ_newick, node.label = "label") #import newick tree of RAXML HA build
-print(HA_NJ_newick)
-
-pHA_NJ <-  ggtree(HA_NJ_newick)
-
-pHA_lim <- pHA_NJ + 
-  geom_treescale() +
-  #Yamagata
-  geom_cladelab(node=288,
-                label="Yamagata",
-                barcolour='red',
-                offset = -0.08,
-                offset.text = 0.003,
-                barsize = 1, 
-                align=TRUE, 
-                angle=270, 
-                hjust='center',
-                fontsize = 6) +
-  #Victoria  
-  geom_cladelab(node=375, 
-                label="Victoria", 
-                barcolour='blue', 
-                barsize = 1,
-                offset = 0.01495,
-                offset.text = 0.003,
-                align=TRUE, 
-                angle=270, 
-                hjust='center', 
-                fontsize = 6) + 
-  geom_tiplab(aes(subset=(grepl("'B/Baltimore/R0122/2016'",label,fixed=TRUE)==TRUE)), align = TRUE, offset=0.001, size = 1.5) + 
-  geom_tiplab(aes(subset=(grepl("'B/Baltimore/R0001/2016'",label,fixed=TRUE)==TRUE)), align = TRUE, offset=0.001, size = 1.5 ) + 
-  geom_tiplab(aes(subset=(grepl("'B/Baltimore/R0250/2016'",label,fixed=TRUE)==TRUE)), align = TRUE, offset=0.001, size = 1.5 ) + 
-  theme_tree() 
-  # geom_text(aes(label=node), size = 1.6 ) #labels branch node ID for labeling purposes...bc Im lazy
-
-
-pHA_lim #plot tree
-
-#ggsave("B_Maryland_HA_tree_FINAL.jpeg", width = 7, height = 7) #save plot to relative dir
-
-
-# B/Yam - node 252
-# B/Vic - node 353
-```
-```{r, IBV HA NJ tree with 4/4 Study Strains}
+```{r IBV HA RAXML tree with 4/4 Study Strains with clade labels}
 
 library(readr)
 library(knitr)
@@ -149,25 +60,12 @@ library(tidytree)
 library(ggrepel)
 
 file_HA_RAXML_newick <- "./tree_builds/B_Vic_B_Yam_HA_Maryland_epiflu_isolates_gisaid_RAXML_ALL.newick" #import built tree 
-HA_meta <- tibble(read_csv('All_HA_vicyam_meta.csv'))#import meta data containing lineage information 
-
 HA_NJ_RAXML <- read.newick(file_HA_RAXML_newick, node.label = "label") #import newick tree of RAXML HA build
 print(HA_NJ_RAXML)
 
-pHA_RAXML <-  ggtree(HA_NJ_RAXML) #run tree without annotations 
-
-##adding meta data 
-HA_node <- pHA_RAXML %>% as.treedata %>% as_tibble() #label nodes as numbers
-HA_node <- as.phylo(HA_node) #convert to phylo object 
-#x <- tibble(label = as.phylo(pHA_RAXML)$tip.label, trait = HA_meta) #import meta data 
-HA_node_join <- full_join(HA_node, HA_meta, by = "label") #merge tree and metadata 
-
-pHA_RAXML_meta <- ggtree(HA_node_join) #run tree with annotations 
-
-
 #visualize ggtree object
-pHA_lim <- pHA_RAXML_meta + 
-  geom_treescale() +
+pHA_lim <- ggtree(HA_NJ_RAXML) + 
+  geom_treescale(x=0.02) +
   #Yamagata
   geom_cladelab(node=259,
                 label="Yamagata",
@@ -206,7 +104,7 @@ pHA_lim #plot tree
 # B/Vic - node 353
 ```
 
-```{r, IBV HA NJ tree with 4/4 Study Strains - TEST with metadata annotations }
+```{r IBV HA RAXML tree with 4/4 Study Strains - with metadata annotations}
 
 library(readr)
 library(knitr)
@@ -237,163 +135,128 @@ HA_RAXML + geom_cladelab(data = HA_node_join,
                           mapping = aes(node = node, label = lineage, color = lineage))
 
 #Additional Annotations with tips and node lables
-pHA_RAXML_meta <- ggtree(HA_NJ_RAXML, aes(color=HA_node_join$lineage)) + 
-  scale_color_manual(values=c("blue", "red")) +
-  geom_treescale() 
-  
-pHA_RAXML_meta + 
-  #Yamagata
-  geom_cladelab(node=259,
-                label="Yamagata",
-                barcolour='red',
-                offset = -0.06,
-                offset.text = 0.007,
-                barsize = 0.5, 
-                align=TRUE, 
-                angle=270, 
-                hjust='center',
-                fontsize = 6) +
-  #Victoria  
-  geom_cladelab(node=356, 
-                label="Victoria", 
-                barcolour='blue', 
-                barsize = 0.5,
-                offset = 0.04,
-                offset.text = 0.007,
-                align=TRUE, 
-                angle=270, 
-                hjust='center', 
-                fontsize = 6) + 
-  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0122/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset=0.001, size = 1.5) + 
-  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0001/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset=0.001, size = 1.5 ) + 
-  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0250/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset= - 0.11, size = 1.5 ) + 
-  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0337/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset= - 0.11, size = 1.5 ) +
-  theme_tree() 
+HA_RAXML_meta <- ggtree(HA_NJ_RAXML, aes(color=HA_node_join$lineage)) + 
+  scale_color_manual(values=c("blue", "red"))
 
-#geom_text(aes(label=node), size = 1.6 ) #labels branch node ID for labeling purposes...bc Im lazy
-#ggsave("B_Maryland_HA_tree_FINAL.jpeg", width = 7, height = 7) #save plot to relative dir
+#Add clade lables in illustrator, labeling by node number is slow.
+
+HA_RAXML_meta + 
+  #Yamagata
+  #geom_cladelab(node=266,
+  #              label="Yamagata",
+  #              barcolour='red',
+  #              offset = -0.06,
+  #              offset.text = 0.007,
+  #              barsize = 0.5, 
+  #              align=TRUE, 
+  #              angle=270, 
+  #              hjust='center',
+  #              fontsize = 6) +
+  #Victoria  
+  #geom_cladelab(node=274, 
+  #              label="Victoria", 
+  #              barcolour='blue', 
+  #              barsize = 0.5,
+  #              offset = 0.04,
+  #              offset.text = 0.007,
+  #              align=TRUE, 
+  #             angle=270, 
+  #              hjust='center', 
+  #              fontsize = 6) + 
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0122/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset=0.001, size = 2.5) + 
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0001/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset=0.001, size = 2.5) + 
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0250/2018",label,fixed=TRUE)==TRUE)), align = TRUE, offset= - 0.11, size = 2.5) + 
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0337/2017",label,fixed=TRUE)==TRUE)), align = TRUE, offset= - 0.11, size = 2.5) + 
+  theme_tree() +
+  theme(legend.position = 'none') +
+  scale_y_continuous(limits=c(-8,260)) +
+  scale_x_continuous(limits=c(0,0.25)) +
+  geom_treescale(x=0.01, y = -8, fontsize = 3, offset.label = 1) + ggtitle("B/Victoria and B/Yamagata HA RAXML Tree")
+
+  #geom_text(aes(label=node), size = 1.6 ) #labels branch node ID for labeling purposes...bc Im lazy
+
+ggsave("B_Maryland_NS_tree_FINAL.jpeg", width = 7, height = 7) #save plot to relative dir
 
 ```
 
 # Building NS Tree
 
-B/Victoria vs B/Yamagata
-RAXML tree chosen for cluster Clarity
+B/Victoria vs B/Yamagata NS1 Tree Rooted to B/Phuket/2013
 
-```{r IBV NS nucleotide tree}
+* RAXML tree chosen for cluster Clarity
+* Clade labeling takes so so so long. by node...figure out a better way to do this you bum.
 
+```{r IBV NS RAXML with 4/4 Study Strains with clade lables}
+
+library(readr)
 library(knitr)
 library(treedataverse)
 library(ggtree)
 library(ggimage)
 library(tidytree)
 
-file_NSnewick <- "./tree_builds/B_Vic_B_Yam_NS_Maryland_epiflu_isolates_gisaid_RAxML.newick"
+file_NSnewick <- "./tree_builds/B_Vic_B_Yam_NS_Maryland_epiflu_isolates_gisaid_RAXML_ALL.newick"
 
 #Importing newick file
 NSnewick <- read.newick(file_NSnewick, node.label = "label") #import newick tree
+NS_meta <- tibble(read_csv('All_NS_vicyam_meta.csv')) #import meta data containing lineage information 
+NS_RAXML <-  ggtree(NSnewick) #generate tree 
+NS_RAXML #show reww without annotations
 
-# node 350
-# node 250
+##adding meta data 
+NS_node <- NS_RAXML %>% as.treedata %>% as_tibble() #label nodes as numbers
+NS_node <- as.phylo(NS_node) #convert to phylo object 
+#x <- tibble(label = as.phylo(pHA_RAXML)$tip.label, trait = HA_meta) #import meta data 
+NS_node_join <- full_join(NS_node, NS_meta, by = "label") #merge tree and metadata 
+NS_node_join <- as_tibble(NS_node_join) #convert to tibble
 
-print(NSnewick)
+NS_RAXML + geom_cladelab(data = NS_node_join, mapping = aes(node = node, label = lineage, color = lineage)) #plot tree with just tip colors
 
-pNS_RAXML <-  ggtree(NSnewick)
+#Additional Annotations with tips and node lables
+NS_RAXML_meta <- ggtree(NSnewick, aes(color=NS_node_join$lineage)) + 
+  scale_color_manual(values=c("blue", "red"))
 
-pNS_lim <- pNS_RAXML + 
-  geom_treescale() +
+pNS_RAXML_meta <- NS_RAXML_meta + 
+  #geom_treescale() +
   #Yamagata
-  geom_cladelab(node=250,
-                label="Yamagata",
-                barcolour='red',
-                offset = 0,
-                offset.text = 0.003,
-                barsize = 1, 
-                align=TRUE, 
-                angle=270, 
-                hjust='center',
-                fontsize = 6) +
+  #geom_cladelab(node=200,
+  #              label="Yamagata",
+  #              barcolour='red',
+  #              offset = 0,
+  #              offset.text = 0.003,
+  #              barsize = 1, 
+  #              align=TRUE, 
+  #              angle=270, 
+  #              hjust='center',
+  #              fontsize = 6) +
   #Victoria 
-  geom_cladelab(node=350, 
-                label="Victoria", 
-                barcolour='blue', 
-                barsize = 1,
-                offset = 0.01495,
-                offset.text = 0.003,
-                align=TRUE, 
-                angle=270, 
-                hjust='center', 
-                fontsize = 6)
+  #geom_cladelab(node=314, 
+  #             label="Victoria", 
+  #              barcolour='blue', 
+  #              barsize = 1,
+  #              offset = 0.01495,
+  #              offset.text = 0.003,
+  #              align=TRUE, 
+  #              angle=270, 
+  #              hjust='center', 
+  #              fontsize = 6) +
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0122/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset= -0.01, size = 2.5) + 
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0001/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset= -0.01, size = 2.5) + 
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0250/2018",label,fixed=TRUE)==TRUE)), align = TRUE, offset= -0.01, size = 2.5) + 
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0337/2017",label,fixed=TRUE)==TRUE)), align = TRUE, offset= -0.01, size = 2.5) +
+  scale_x_continuous(limits = c(0, 0.15)) + 
+  scale_y_continuous(limits = c(-8,260)) +
+  theme_tree() + 
+  geom_treescale(x=0.01, y = -8, fontsize = 3, offset.label = 1) +
+  theme(legend.position = 'none') + ggtitle("B/Victoria and B/Yamagata NS RAXML Tree")
 
-#'''#for labeling specific samples when sequences are avaialble
-#  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0122/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset=0.001, size = 1.5) + #annotated strains
-#  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0001/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset=0.001, size = 1.5 ) + #annotated strains 
-#  theme_tree() 
+pNS_RAXML_meta
 
-
-pNS_lim #plot tree
-
+#geom_text(aes(label=node), size = 1.5 ) #labels branch node ID for labeling purposes...bc Im lazy
 ggsave("B_Maryland_NS_tree.jpeg", width = 7, height = 7) #save plot to relative dir
 
 ```
 
-```{r IBV RAXML NS nucleotide tree with 3/4 IBV clinical isolates}
-library(knitr)
-library(treedataverse)
-library(ggtree)
-library(ggimage)
-library(tidytree)
-
-file_NSnewick_all <- "./tree_builds/B_Vic_B_Yam_NS_Maryland_epiflu_isolates_gisaid_RAxML_cs.newick"
-
-#Importing newick file
-NSnewick_all <- read.newick(file_NSnewick_all, node.label = "label") #import newick tree
-
-# node 350
-# node 250
-
-print(NSnewick_all)
-
-pNS_all_RAXML <-  ggtree(NSnewick_all)
-
-pNS_all_lim <- pNS_all_RAXML + 
-  geom_treescale() +
-  #Yamagata
-  geom_cladelab(node=394,
-                label="Yamagata",
-                barcolour='red',
-                offset = 0,
-                offset.text = 0.003,
-                barsize = 1, 
-                align=TRUE, 
-                angle=270, 
-                hjust='center',
-                fontsize = 6) +
-  #Victoria 
-  geom_cladelab(node=253, 
-                label="Victoria", 
-                barcolour='blue', 
-                barsize = 1,
-                offset = 0,
-                offset.text = 0.003,
-                align=TRUE, 
-                angle=270, 
-                hjust='center', 
-                fontsize = 6) + 
-  geom_tiplab(aes(subset=(grepl("B/Baltimore/R001/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset=-0.02, size = 3) + 
-  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0122/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset=-0.02, size = 3) +
-  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0250/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset=-0.02, size = 3) + 
-  theme_tree() 
-  #geom_text(aes(label=node)) #adds node number to identify
-
-
-pNS_all_lim #plot tree
-
-ggsave("B_Maryland_NS_tree_ALL_FINAL.jpeg", width = 7, height = 7) #save plot to relative dir
-
-# Node 394 - Yam 
-# Node 253 - VIc
-```
 
 
 
