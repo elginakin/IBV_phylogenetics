@@ -41,13 +41,14 @@ https://bioconductor.statistik.tu-dortmund.de/packages/3.6/bioc/vignettes/ggtree
 https://bioconnector.github.io/workshops/r-ggtree.html#labeling_clades
 
 # Building HA Tree
+
+**Be sure to ROOT all trees in Geneius before importing here** 
+
 B/Victoria vs B/Yamagata
 
 Still missing B/Yamagata Sequences
-  - R0337 
-  - R0225
-
-Get from Jo
+  - R0337 - aquired from Amanda on September 15th - sequenced with some of David Sullivan's strains.  
+  - R0225 - provided by Hsuan. 
 
 ```{r, IBVHA nucleotide tree - trial}
 library(knitr)
@@ -56,8 +57,10 @@ library(ggtree)
 library(ggimage)
 library(tidytree)
 
+file_HAnewick <-  "./tree_builds/B_Vic_B_Yam_HA_Maryland_epiflu_isolates_gisaid_NJ_cs.newick"
+
 #Importing newick file
-HAnewick <- read.newick("B_Vic_B_Yam_HA_Maryland_epiflu_isolates_gisaid_NJ_cs.newick", node.label = "label") #import newick tree
+HAnewick <- read.newick(file_HAnewick, node.label = "label") #import newick tree
 print(HAnewick)
 
 pHA <-  ggtree(HAnewick)
@@ -80,9 +83,7 @@ pHA_annot
 
 
 ```
-
-
-```{r, IBV HA NJ tree with 4/4 Study Strains}
+```{r, IBV HA NJ tree with 3/4 Study Strains OLD - reference}
 
 library(knitr)
 library(treedataverse)
@@ -91,7 +92,9 @@ library(ggimage)
 library(tidytree)
 library(ggrepel)
 
-HA_NJ_newick <- read.newick("B_Vic_B_Yam_HA_Maryland_epiflu_isolates_gisaid_NJ_cs.newick", node.label = "label") #import newick tree of RAXML HA build
+file_HA_NJ_newick <- "./tree_builds/B_Vic_B_Yam_HA_Maryland_epiflu_isolates_gisaid_NJ_cs.newick"
+
+HA_NJ_newick <- read.newick(file_HA_NJ_newick, node.label = "label") #import newick tree of RAXML HA build
 print(HA_NJ_newick)
 
 pHA_NJ <-  ggtree(HA_NJ_newick)
@@ -135,14 +138,147 @@ pHA_lim #plot tree
 # B/Yam - node 252
 # B/Vic - node 353
 ```
+```{r, IBV HA NJ tree with 4/4 Study Strains}
+
+library(readr)
+library(knitr)
+library(treedataverse)
+library(ggtree)
+library(ggimage)
+library(tidytree)
+library(ggrepel)
+
+file_HA_RAXML_newick <- "./tree_builds/B_Vic_B_Yam_HA_Maryland_epiflu_isolates_gisaid_RAXML_ALL.newick" #import built tree 
+HA_meta <- tibble(read_csv('All_HA_vicyam_meta.csv'))#import meta data containing lineage information 
+
+HA_NJ_RAXML <- read.newick(file_HA_RAXML_newick, node.label = "label") #import newick tree of RAXML HA build
+print(HA_NJ_RAXML)
+
+pHA_RAXML <-  ggtree(HA_NJ_RAXML) #run tree without annotations 
+
+##adding meta data 
+HA_node <- pHA_RAXML %>% as.treedata %>% as_tibble() #label nodes as numbers
+HA_node <- as.phylo(HA_node) #convert to phylo object 
+#x <- tibble(label = as.phylo(pHA_RAXML)$tip.label, trait = HA_meta) #import meta data 
+HA_node_join <- full_join(HA_node, HA_meta, by = "label") #merge tree and metadata 
+
+pHA_RAXML_meta <- ggtree(HA_node_join) #run tree with annotations 
 
 
+#visualize ggtree object
+pHA_lim <- pHA_RAXML_meta + 
+  geom_treescale() +
+  #Yamagata
+  geom_cladelab(node=259,
+                label="Yamagata",
+                barcolour='red',
+                offset = -0.08,
+                offset.text = 0.003,
+                barsize = 1, 
+                align=TRUE, 
+                angle=270, 
+                hjust='center',
+                fontsize = 6) +
+  #Victoria  
+  geom_cladelab(node=356, 
+                label="Victoria", 
+                barcolour='blue', 
+                barsize = 1,
+                offset = 0.028,
+                offset.text = 0.003,
+                align=TRUE, 
+                angle=270, 
+                hjust='center', 
+                fontsize = 6) + 
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0122/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset=0.001, size = 1.5) + 
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0001/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset=0.001, size = 1.5 ) + 
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0250/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset= - 0.11, size = 1.5 ) + 
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0337/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset= - 0.11, size = 1.5 ) +
+  theme_tree() 
+
+  #geom_text(aes(label=node), size = 1.6 ) #labels branch node ID for labeling purposes...bc Im lazy
+
+pHA_lim #plot tree
+
+#ggsave("B_Maryland_HA_tree_FINAL.jpeg", width = 7, height = 7) #save plot to relative dir
+
+# B/Yam - node 252
+# B/Vic - node 353
+```
+
+```{r, IBV HA NJ tree with 4/4 Study Strains - TEST with metadata annotations }
+
+library(readr)
+library(knitr)
+library(treedataverse)
+library(ggtree)
+library(ggimage)
+library(tidytree)
+library(ggrepel)
+
+file_HA_RAXML_newick <- "./tree_builds/B_Vic_B_Yam_HA_Maryland_epiflu_isolates_gisaid_RAXML_ALL.newick" #import built tree 
+
+HA_meta <- tibble(read_csv('All_HA_vicyam_meta.csv'))#import meta data containing lineage information 
+
+HA_NJ_RAXML <- read.newick(file_HA_RAXML_newick, node.label = "label")  #import newick tree of RAXML HA build
+print(HA_NJ_RAXML)
+
+HA_RAXML <-  ggtree(HA_NJ_RAXML) #run tree without annotations 
+HA_RAXML
+
+##adding meta data 
+HA_node <- HA_RAXML %>% as.treedata %>% as_tibble() #label nodes as numbers
+HA_node <- as.phylo(HA_node) #convert to phylo object 
+#x <- tibble(label = as.phylo(pHA_RAXML)$tip.label, trait = HA_meta) #import meta data 
+HA_node_join <- full_join(HA_node, HA_meta, by = "label") #merge tree and metadata 
+HA_node_join <- as_tibble(HA_node_join) #convert to tibble
+
+HA_RAXML + geom_cladelab(data = HA_node_join, 
+                          mapping = aes(node = node, label = lineage, color = lineage))
+
+#Additional Annotations with tips and node lables
+pHA_RAXML_meta <- ggtree(HA_NJ_RAXML, aes(color=HA_node_join$lineage)) + 
+  scale_color_manual(values=c("blue", "red")) +
+  geom_treescale() 
+  
+pHA_RAXML_meta + 
+  #Yamagata
+  geom_cladelab(node=259,
+                label="Yamagata",
+                barcolour='red',
+                offset = -0.06,
+                offset.text = 0.007,
+                barsize = 0.5, 
+                align=TRUE, 
+                angle=270, 
+                hjust='center',
+                fontsize = 6) +
+  #Victoria  
+  geom_cladelab(node=356, 
+                label="Victoria", 
+                barcolour='blue', 
+                barsize = 0.5,
+                offset = 0.04,
+                offset.text = 0.007,
+                align=TRUE, 
+                angle=270, 
+                hjust='center', 
+                fontsize = 6) + 
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0122/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset=0.001, size = 1.5) + 
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0001/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset=0.001, size = 1.5 ) + 
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0250/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset= - 0.11, size = 1.5 ) + 
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0337/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset= - 0.11, size = 1.5 ) +
+  theme_tree() 
+
+#geom_text(aes(label=node), size = 1.6 ) #labels branch node ID for labeling purposes...bc Im lazy
+#ggsave("B_Maryland_HA_tree_FINAL.jpeg", width = 7, height = 7) #save plot to relative dir
+
+```
 
 # Building NS Tree
+
 B/Victoria vs B/Yamagata
 RAXML tree chosen for cluster Clarity
-
-
 
 ```{r IBV NS nucleotide tree}
 
@@ -152,8 +288,10 @@ library(ggtree)
 library(ggimage)
 library(tidytree)
 
+file_NSnewick <- "./tree_builds/B_Vic_B_Yam_NS_Maryland_epiflu_isolates_gisaid_RAxML.newick"
+
 #Importing newick file
-NSnewick <- read.newick("B_Vic_B_Yam_NS_Maryland_epiflu_isolates_gisaid_RAxML.newick", node.label = "label") #import newick tree
+NSnewick <- read.newick(file_NSnewick, node.label = "label") #import newick tree
 
 # node 350
 # node 250
@@ -197,8 +335,6 @@ pNS_lim #plot tree
 
 ggsave("B_Maryland_NS_tree.jpeg", width = 7, height = 7) #save plot to relative dir
 
-
-
 ```
 
 ```{r IBV RAXML NS nucleotide tree with 3/4 IBV clinical isolates}
@@ -208,8 +344,10 @@ library(ggtree)
 library(ggimage)
 library(tidytree)
 
+file_NSnewick_all <- "./tree_builds/B_Vic_B_Yam_NS_Maryland_epiflu_isolates_gisaid_RAxML_cs.newick"
+
 #Importing newick file
-NSnewick_all <- read.newick("B_Vic_B_Yam_NS_Maryland_epiflu_isolates_gisaid_RAxML_cs.newick", node.label = "label") #import newick tree
+NSnewick_all <- read.newick(file_NSnewick_all, node.label = "label") #import newick tree
 
 # node 350
 # node 250
