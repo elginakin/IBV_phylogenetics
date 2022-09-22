@@ -175,7 +175,7 @@ HA_RAXML_meta +
 
   #geom_text(aes(label=node), size = 1.6 ) #labels branch node ID for labeling purposes...bc Im lazy
 
-ggsave("B_Maryland_NS_tree_FINAL.jpeg", width = 7, height = 7) #save plot to relative dir
+ggsave("B_Maryland_HA_tree_FINAL.jpeg", width = 7, height = 5) #save plot to relative dir
 
 ```
 
@@ -253,7 +253,7 @@ pNS_RAXML_meta <- NS_RAXML_meta +
 pNS_RAXML_meta
 
 #geom_text(aes(label=node), size = 1.5 ) #labels branch node ID for labeling purposes...bc Im lazy
-ggsave("B_Maryland_NS_tree.jpeg", width = 7, height = 7) #save plot to relative dir
+ggsave("B_Maryland_NS_tree.jpeg", width = 5, height = 7) #save plot to relative dir
 
 ```
 
