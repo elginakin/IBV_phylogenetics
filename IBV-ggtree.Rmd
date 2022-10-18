@@ -5,7 +5,6 @@ output: html_notebook
 ---
 
 # IBV Lineage Comparison 
-
 ## Data collection
 
 Sequence were aquired from GISAID in August of 2022 with the following filters: 
@@ -28,17 +27,27 @@ Sequence were aquired from GISAID in August of 2022 with the following filters:
 
 ## Plot using ggtree
 
-```{r, install ggtree if needed}
-
+```{r, install and import packages }
+# Remove '#' character and run code tyo install
 #ggtree Test 
 #install 
+
 if (!require("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
 
 BiocManager::install("YuLab-SMU/treedataverse") #includes ggtree along with other essential packages
 # browseVignettes("ggtree") #essnetial guide for tree browsing
 
+library(readr) #importing data 
+library(knitr) # knitting .rmd file
+library(treedataverse) 
+library(ggtree)
+library(ggimage)
+library(tidytree)
+library(ggrepel) 
+
 ```
+
 # Building the HA Tree
 
 **Be sure to ROOT all trees in Geneius before importing here** 
@@ -105,14 +114,6 @@ pHA_lim #plot tree
 ```
 
 ```{r IBV HA RAXML tree with 4/4 Study Strains - with metadata annotations}
-
-library(readr)
-library(knitr)
-library(treedataverse)
-library(ggtree)
-library(ggimage)
-library(tidytree)
-library(ggrepel)
 
 file_HA_RAXML_newick <- "./tree_builds/B_Vic_B_Yam_HA_Maryland_epiflu_isolates_gisaid_RAXML_ALL.newick" #import built tree 
 
@@ -188,13 +189,6 @@ B/Victoria vs B/Yamagata NS1 Tree Rooted to B/Phuket/2013
 
 ```{r IBV NS RAXML with 4/4 Study Strains with clade lables}
 
-library(readr)
-library(knitr)
-library(treedataverse)
-library(ggtree)
-library(ggimage)
-library(tidytree)
-
 file_NSnewick <- "./tree_builds/B_Vic_B_Yam_NS_Maryland_epiflu_isolates_gisaid_RAXML_ALL.newick"
 
 #Importing newick file
@@ -253,7 +247,7 @@ pNS_RAXML_meta <- NS_RAXML_meta +
 pNS_RAXML_meta
 
 #geom_text(aes(label=node), size = 1.5 ) #labels branch node ID for labeling purposes...bc Im lazy
-ggsave("B_Maryland_NS_tree.jpeg", width = 5, height = 7) #save plot to relative dir
+ggsave("B_Maryland_NS_tree.jpeg", plot = pNS_RAXML_meta, width = 7, height = 5) #save plot to relative dir
 
 ```
 
@@ -264,4 +258,28 @@ ggsave("B_Maryland_NS_tree.jpeg", width = 5, height = 7) #save plot to relative 
 
 
 
+
+
+
+# Merging NextClade HA Data with Metadata files
+
+* Lineages were determined by NextClade according to HA for both B/Victoria and B/Yamagata Lineages. 
+* Lineage metadata forall samples in HA and NA trees will be concatenated and merged. 
+
+
+```{r import and merge nextclade tables}
+
+#read om files
+file_HA_nc_meta <- "./IBV_Compare_Nextclade/B_Maryland_Victoria_nextclade/B_Maryland_Victoria_nextclade.tsv" #read file from path
+file_NS_nc_meta <- "./IBV_Compare_Nextclade/B_Maryland_Victoria_nextclade/B_Maryland_Yamagata_nextclade.tsv" #read file from path
+
+#import data 
+HA_nc_meta <- read_tsv(file_HA_nc_meta, col_select = c(seqName, clade))# read vic nexclade only seqName and clade
+HA_nc_meta <- read_csv(file_NS_nc_meta, col_select = c(seqName, clade))# read yam nextclade only seqName and clade
+
+
+
+
+
+```
 

@@ -1,0 +1,10 @@
+
+# Extract Sequences
+
+seqkit grep -f NSP1_LIST.csv Maryland_Vic-Yam_NS1_msa_annotation.fasta -o Maryland_Vic-Yam_NS1_msa_annotation_NSp1.fasta
+
+seqkit grep -f NSP2_LIST.csv Maryland_Vic-Yam_NS1_msa_annotation.fasta -o Maryland_Vic-Yam_NS1_msa_annotation_NSp2.fasta
+
+# Translate Sequences by Reading Frame 1 
+
+seqkit translate Maryland_Vic-Yam_NS1_msa_annotation_NSp2.fasta -o Maryland_Vic-Yam_NS1_msa_annotation_NSp2_pro.fasta
