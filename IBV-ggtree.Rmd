@@ -25,19 +25,19 @@ Sequence were aquired from GISAID in August of 2022 with the following filters:
 * https://bioconductor.statistik.tu-dortmund.de/packages/3.6/bioc/vignettes/ggtree/inst/doc/treeAnnotation.html
 * https://bioconnector.github.io/workshops/r-ggtree.html#labeling_clades
 
+* https://guangchuangyu.github.io/treedata-workshop/r-ggtree-annotation.html #primary example
+* color palletes: http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/
+
 ## Plot using ggtree
 
 ```{r, install and import packages }
 # Remove '#' character and run code tyo install
 #ggtree Test 
-#install 
 
-if (!require("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
-
-BiocManager::install("YuLab-SMU/treedataverse") #includes ggtree along with other essential packages
+#BiocManager::install("YuLab-SMU/treedataverse") #includes ggtree along with other essential packages
 # browseVignettes("ggtree") #essnetial guide for tree browsing
 
+library(tidyverse)
 library(readr) #importing data 
 library(knitr) # knitting .rmd file
 library(treedataverse) 
@@ -48,6 +48,77 @@ library(ggrepel)
 
 ```
 
+
+# NextClade Lineage Data
+
+* Lineages were determined by NextClade according to HA for both B/Victoria and B/Yamagata Lineages. 
+* Lineage metadata forall samples in HA and NA trees will be concatenated and merged.
+* quotes added manually in sublime to nc meta .tsv files
+
+```{r import and merge nextclade tables}
+
+#read om files
+file_HA_vic_nc_meta <- "./IBV_Compare_Nextclade/B_Maryland_Victoria_nextclade/B_Maryland_Victoria_nextclade.tsv" #read file from path
+file_HA_yam_nc_meta <- "./IBV_Compare_Nextclade/B_Maryland_Yamagata_nextclade/B_Maryland_Yamagata_nextclade.tsv" #read file from path
+
+#import data 
+HA_vic_nc_meta <- read_tsv(file_HA_vic_nc_meta, col_select = c(label, clade))# read vic nexclade only seqName and clade
+HA_yam_nc_meta <- read_tsv(file_HA_yam_nc_meta, col_select = c(label, clade))# read yam nextclade only seqName and clade
+
+#merge
+nc_meta_merge <- rbind(HA_vic_nc_meta, HA_yam_nc_meta)
+nc_meta_merge
+
+#add quotations to beggining and end of the seqName
+#rename seqname column to
+
+```
+
+
+# GISAID Strain Metadata 
+
+## Downloading GISAID Metadata 
+
+It is recommended that all metadata is downloaded at the time of sequence download/acquisition as it is extremely difficult to cleanly download matching metadata at a later time.
+
+```{r importing GISAID metadata}
+
+HA_meta <- tibble(read_csv('All_HA_vicyam_meta.csv', col_select = c(label, lineage))) #import GISAID meta data containing general lineage and year collected for HA
+NS_meta <- tibble(read_csv('All_NS_vicyam_meta.csv')) #import GISAID meta data containing general lineage and year collected for HA 
+
+dim(NS_meta)
+dim(HA_meta)
+#concatenate these
+
+```
+
+might run into an issue with not having the same identical sample IDs for HA sequences as NS1 sequences. 
+
+```{r merge nexclade and GISAID metadata for HA}
+
+#clean data 
+#rename seqName column in next clade dataset to label: usedplyr 
+
+#renamed in excel...
+
+#nc_meta_merge <- nc_meta_merge %>% 
+#  rename(
+#  label = seqName
+#  )
+
+#add quotations to that dumb shit
+#nc_meta_merge$label <-  paste0("'", nc_meta_merge$label,"'")
+#nc_meta_merge
+#guess you'll always have to do this...
+
+#merge nc_meta with GISAID meta ()
+HA_gis_nc_meta <- inner_join(nc_meta_merge, HA_meta, by = 'label') #full join for HA metadata
+HA_gis_nc_meta
+
+```
+
+Nexty time, automate quote cleaning fromto match the tree dataset 
+
 # Building the HA Tree
 
 **Be sure to ROOT all trees in Geneius before importing here** 
@@ -57,8 +128,10 @@ B/Victoria vs B/Yamagata HA Tree B/Phuket/2013
 Still missing B/Yamagata Sequences
   - R0337 - aquired from Amanda on September 15th - sequenced with some of David Sullivan's strains.  
   - R0225 - provided by Hsuan. 
+  
+IBV HA RAXML tree with 4/4 Study Strains with clade label - basic tree
 
-```{r IBV HA RAXML tree with 4/4 Study Strains with clade labels}
+```{r}
 
 library(readr)
 library(knitr)
@@ -113,14 +186,13 @@ pHA_lim #plot tree
 # B/Vic - node 353
 ```
 
-```{r IBV HA RAXML tree with 4/4 Study Strains - with metadata annotations}
+IBV HA RAXML tree with 4/4 Study Strains - with metadata tip annotations
+```{r }
 
 file_HA_RAXML_newick <- "./tree_builds/B_Vic_B_Yam_HA_Maryland_epiflu_isolates_gisaid_RAXML_ALL.newick" #import built tree 
-
-HA_meta <- tibble(read_csv('All_HA_vicyam_meta.csv'))#import meta data containing lineage information 
-
 HA_NJ_RAXML <- read.newick(file_HA_RAXML_newick, node.label = "label")  #import newick tree of RAXML HA build
-print(HA_NJ_RAXML)
+
+print(HA_NJ_RAXML) #view it
 
 HA_RAXML <-  ggtree(HA_NJ_RAXML) #run tree without annotations 
 HA_RAXML
@@ -128,6 +200,7 @@ HA_RAXML
 ##adding meta data 
 HA_node <- HA_RAXML %>% as.treedata %>% as_tibble() #label nodes as numbers
 HA_node <- as.phylo(HA_node) #convert to phylo object 
+
 #x <- tibble(label = as.phylo(pHA_RAXML)$tip.label, trait = HA_meta) #import meta data 
 HA_node_join <- full_join(HA_node, HA_meta, by = "label") #merge tree and metadata 
 HA_node_join <- as_tibble(HA_node_join) #convert to tibble
@@ -170,9 +243,9 @@ HA_RAXML_meta +
   geom_tiplab(aes(subset=(grepl("B/Baltimore/R0337/2017",label,fixed=TRUE)==TRUE)), align = TRUE, offset= - 0.11, size = 2.5) + 
   theme_tree() +
   theme(legend.position = 'none') +
-  scale_y_continuous(limits=c(-8,260)) +
+  scale_y_continuous(limits=c(-9,260)) +
   scale_x_continuous(limits=c(0,0.25)) +
-  geom_treescale(x=0.01, y = -8, fontsize = 3, offset.label = 1) + ggtitle("B/Victoria and B/Yamagata HA RAXML Tree")
+    geom_treescale(x=0.08, y = 100, fontsize = 3, offset.label = 1) + ggtitle("B/Victoria and B/Yamagata HA", "RAXML protein tree rooted to B/Phuket/3073/2013")
 
   #geom_text(aes(label=node), size = 1.6 ) #labels branch node ID for labeling purposes...bc Im lazy
 
@@ -180,20 +253,141 @@ ggsave("B_Maryland_HA_tree_FINAL.jpeg", width = 7, height = 5) #save plot to rel
 
 ```
 
+IBV HA RAXML tree with lineage AND clade
+
+```{r IBV HA RA}
+
+file_HA_RAXML_newick <- "./tree_builds/B_Vic_B_Yam_HA_Maryland_epiflu_isolates_gisaid_RAXML_ALL.newick" #import built tree 
+HA_NJ_RAXML <- read.newick(file_HA_RAXML_newick, node.label = "label")  #import newick tree of RAXML HA build
+
+print(HA_NJ_RAXML) #view it
+
+HA_RAXML <-  ggtree(HA_NJ_RAXML, aes(color = HA_node_join.2$clade)) #run tree without annotations 
+HA_RAXML
+
+
+##adding meta data 
+HA_node <- HA_RAXML %>% as.treedata %>% as_tibble() #label nodes as numbers
+HA_node <- as.phylo(HA_node) #convert to phylo object 
+
+#x <- tibble(label = as.phylo(pHA_RAXML)$tip.label, trait = HA_meta) #import meta data 
+HA_node_join.2 <- full_join(HA_node, HA_gis_nc_meta, by = "label") #merge tree and metadata 
+HA_node_join.2 <- as_tibble(HA_node_join.2) #convert to tibble
+
+#Additional Annotations with tips and node lables
+HA_RAXML_meta.2 <- ggtree(HA_NJ_RAXML) 
+
+HA_node_join.2 #show meta table
+
+#change clade legend title 
+
+clade_legend <- "Clade"
+
+HA_RAXML_meta.2_final <- HA_RAXML_meta.2 + 
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0122/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset=0.001, size = 4, color = "black") + 
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0001/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset=0.001, size = 4, color = "black") + 
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0250/2018",label,fixed=TRUE)==TRUE)), align = TRUE, offset= - 0.11, size = 4, color = "black") + 
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0337/2017",label,fixed=TRUE)==TRUE)), align = TRUE, offset= - 0.11, size = 4, color = "black") + 
+  geom_tippoint(aes(color = HA_node_join.2$clade), size = 1.5, alpha = 0.75) +
+  theme_tree() +
+  theme() +
+  scale_y_continuous(limits=c(-9,260)) +
+  scale_x_continuous(limits=c(0,0.25)) +
+  geom_treescale(x=0.08, y = 100, fontsize = 3, offset.label = 1) + 
+  ggtitle("B/Victoria and B/Yamagata HA", "RAXML protein tree rooted to B/Phuket/3073/2013") + 
+  scale_color_discrete(name = "Clade") 
+
+ggsave("./final_figs/HA_clade_RAXML.tiff", HA_RAXML_meta.2_final, height = 6, width = 9)
+
+
+```
+
+```{r nextclade color pallet}
+
+```
+
+
 # Building NS Tree
 
 B/Victoria vs B/Yamagata NS1 Tree Rooted to B/Phuket/2013
 
 * RAXML tree chosen for cluster Clarity
-* Clade labeling takes so so so long. by node...figure out a better way to do this you bum.
+* Lineage labeling takes so so so longs by node...figure out a better way to do this you bum.
 
-```{r IBV NS RAXML with 4/4 Study Strains with clade lables}
+IBV NS RAXML with 4/4 Study Strains with lineage lables
+```{r }
 
 file_NSnewick <- "./tree_builds/B_Vic_B_Yam_NS_Maryland_epiflu_isolates_gisaid_RAXML_ALL.newick"
 
 #Importing newick file
 NSnewick <- read.newick(file_NSnewick, node.label = "label") #import newick tree
-NS_meta <- tibble(read_csv('All_NS_vicyam_meta.csv')) #import meta data containing lineage information 
+NS_RAXML <-  ggtree(NSnewick) #generate tree 
+NS_RAXML #show reww without annotations
+
+##adding meta data 
+NS_node <- NS_RAXML %>% as.treedata %>% as_tibble() #label nodes as numbers
+NS_node <- as.phylo(NS_node) #convert to phylo object 
+#x <- tibble(label = as.phylo(pHA_RAXML)$tip.label, trait = HA_meta) #import meta data 
+NS_node_join <- full_join(NS_node, NS_meta, by = "label") #merge tree and metadata 
+NS_node_join <- as_tibble(NS_node_join) #convert to tibble
+
+NS_RAXML + geom_cladelab(data = NS_node_join, mapping = aes(node = node, label = lineage, color = lineage)) #plot tree with just tip colors
+
+#Additional Annotations with tips and node lables
+NS_RAXML_meta <- ggtree(NSnewick, aes(color=NS_node_join$lineage)) + 
+  scale_color_manual(values=c("blue", "red"))
+
+pNS_RAXML_meta <- NS_RAXML_meta + 
+  #for highlight lineages with bars..you have to select the divergent nodes which is tedious...
+  #geom_treescale() +
+  #Yamagata
+  #geom_cladelab(node=200,
+  #              label="Yamagata",
+  #              barcolour='red',
+  #              offset = 0,
+  #              offset.text = 0.003,
+  #              barsize = 1, 
+  #              align=TRUE, 
+  #              angle=270, 
+  #              hjust='center',
+  #              fontsize = 6) +
+  #Victoria 
+  #geom_cladelab(node=314, 
+  #             label="Victoria", 
+  #              barcolour='blue', 
+  #              barsize = 1,
+  #              offset = 0.01495,
+  #              offset.text = 0.003,
+  #              align=TRUE, 
+  #              angle=270, 
+  #              hjust='center', 
+  #              fontsize = 6) +
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0122/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset= -0.01, size = 4 + 
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0001/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset= -0.01, size = 4) + 
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0250/2018",label,fixed=TRUE)==TRUE)), align = TRUE, offset= -0.01, size = 4) + 
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0337/2017",label,fixed=TRUE)==TRUE)), align = TRUE, offset= -0.01, size = 4) +
+  geom_tippoint(aes(color = NS_node_join$lineage), size = 0.75, alpha = 0.75) +
+  scale_x_continuous(limits = c(0, 0.15)) + 
+  scale_y_continuous(limits = c(-8,260)) +
+  theme_tree() + 
+  geom_treescale(x=0.01, y = -8, fontsize = 3, offset.label = 1) +
+  theme(legend.position = 'none') + ggtitle("B/Victoria and B/Yamagata NS RAXML Nu Tree")
+
+pNS_RAXML_meta
+
+#geom_text(aes(label=node), size = 1.5 ) #labels branch node ID for labeling purposes...bc Im lazy
+ggsave("B_Maryland_NS_tree.jpeg", plot = pNS_RAXML_meta, width = 7, height = 5) #save plot to relative dir
+
+```
+
+
+IBV NS RAXML with 4/4 Study Strains with clade and lineage labels - simple...
+```{r}
+
+file_NSnewick <- "./tree_builds/B_Vic_B_Yam_NS_Maryland_epiflu_isolates_gisaid_RAXML_ALL.newick"
+
+#Importing newick file
+NSnewick <- read.newick(file_NSnewick, node.label = "label") #import newick tree
 NS_RAXML <-  ggtree(NSnewick) #generate tree 
 NS_RAXML #show reww without annotations
 
@@ -234,52 +428,200 @@ pNS_RAXML_meta <- NS_RAXML_meta +
   #              angle=270, 
   #              hjust='center', 
   #              fontsize = 6) +
-  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0122/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset= -0.01, size = 2.5) + 
-  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0001/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset= -0.01, size = 2.5) + 
-  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0250/2018",label,fixed=TRUE)==TRUE)), align = TRUE, offset= -0.01, size = 2.5) + 
-  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0337/2017",label,fixed=TRUE)==TRUE)), align = TRUE, offset= -0.01, size = 2.5) +
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0122/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset= -0.01, size = 4) + 
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0001/2016",label,fixed=TRUE)==TRUE)), align = TRUE, offset= -0.01, size = 4) + 
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0250/2018",label,fixed=TRUE)==TRUE)), align = TRUE, offset= -0.01, size = 4) + 
+  geom_tiplab(aes(subset=(grepl("B/Baltimore/R0337/2017",label,fixed=TRUE)==TRUE)), align = TRUE, offset= -0.01, size = 4) +
   scale_x_continuous(limits = c(0, 0.15)) + 
   scale_y_continuous(limits = c(-8,260)) +
   theme_tree() + 
   geom_treescale(x=0.01, y = -8, fontsize = 3, offset.label = 1) +
-  theme(legend.position = 'none') + ggtitle("B/Victoria and B/Yamagata NS RAXML Tree")
+  theme(legend.position = 'none') + ggtitle("B/Victoria and B/Yamagata NS", "RAXML tree rooted to B/Phuket/3073/2013") 
 
 pNS_RAXML_meta
 
 #geom_text(aes(label=node), size = 1.5 ) #labels branch node ID for labeling purposes...bc Im lazy
-ggsave("B_Maryland_NS_tree.jpeg", plot = pNS_RAXML_meta, width = 7, height = 5) #save plot to relative dir
+ggsave("./final_figs/B_Maryland_NS_tree.jpeg", plot = pNS_RAXML_meta, width = 7, height = 5) #save plot to relative dir
+
+```
+
+## NS Protein Trees - Broken down to NS1 and NS2 Trees
+Adding alignment with msaplot and geom_facet with ggmsa 
+
+function (p, fasta, offset = 0, width = 1, color = NULL, window = NULL, 
+    bg_line = TRUE, height = 0.8) 
+    
+TOUGH BECAUSE you have to add single quotes at the beginning and end of fasta names to match the branch names...just did it in sublime 
+
+## NSp1 MSA Tree
+```{r}
+
+library(ggtree)
+
+NSp1_pro_file <- "./tree_builds/Maryland_Vic-Yam_NS1_msa_annotation_NSp1_pro_alignment_RAxML_Tree.newick"
+NSp1_pro_msa_file <-"./tree_builds/Maryland_Vic-Yam_NS1_msa_annotation_NSp1_pro_alignment_q.fasta" #single quotes must be added to sample headers
+
+NSp1_pro_newick <- read.newick(NSp1_pro_file , node.label = "label")
+NSp1_pro_RAXML <-  ggtree(NSp1_pro_newick) + 
+                      theme_tree() + 
+                      geom_treescale(x=0.01, y = -8, fontsize = 3, offset.label = 1)#generate tree 
+
+NSp1_pro_RAXML #show without annotations
+
+#plot msa plot
+pNSp1_pro_RAXML_msa.1 <- msaplot(NSp1_pro_RAXML, fasta=NSp1_pro_msa_file, width = 6, color = ) # full msa
+pNSp1_pro_RAXML_msa.2 <- msaplot(NSp1_pro_RAXML, fasta=NSp1_pro_msa_file, window = c(1,10), width = 0.5, height = 2) #msa NSp1 aa 1-10
+pNSp1_pro_RAXML_msa.3 <- msaplot(NSp1_pro_RAXML, fasta=NSp1_pro_msa_file, window = c(107,127), width = 2, height = 2) #msa NSp1 aa 107-127
+pNSp1_pro_RAXML_msa.4 <- msaplot(NSp1_pro_RAXML, fasta=NSp1_pro_msa_file, window = c(130,140), width = 2, height = 2) #msa NSp1 aa 107-127
+pNSp1_pro_RAXML_msa.5 <- msaplot(NSp1_pro_RAXML, fasta=NSp1_pro_msa_file, window = c(1,10), width = 0.5, height = 2) + coord_polar(theta='y') #circular plot 
+
+#show plots 
+pNSp1_pro_RAXML_msa.1 + ggtitle("NS1 Protein Tree", subtitle = "With Complete Alignment rooted to B/Phuket/3073/2013")
+
+pNSp1_pro_RAXML_msa.2 + ggtitle("NS1 Protein Tree", subtitle = "Residues: 1-10 rooted to B/Phuket/3073/2013") 
+
+pNSp1_pro_RAXML_msa.3 + ggtitle("NS1 Protein Tree", subtitle = "Residues: 107-127 rooted to B/Phuket/3073/2013") 
+
+pNSp1_pro_RAXML_msa.4 + ggtitle("NS1 Protein Tree", subtitle = "Residues: 130-140 rooted to B/Phuket/3073/2013") 
+
+pNSp1_pro_RAXML_msa.5 + ggtitle("NS1 Protein Tree", subtitle = "Residues: 1-10 circular rooted to B/Phuket/3073/2013") 
+
+pNSp1_pro_RAXML_msa.2 + pNSp1_pro_RAXML_msa.5
+
+#ggsave("B_Maryland_NSp1-pro_tree_130-140_FINAL.jpeg", width = 11, height = 5) #saves pNSp1_pro_RAXML_msa.3  
+
+
+```
+## NSp1 NSA Tree with Lineage and Sample Annotation
+
+```{r incomplete}
+
+library(ggtree)
+
+##adding meta data 
+NS_node <- NS_RAXML %>% as.treedata %>% as_tibble() #label nodes as numbers
+NS_node <- as.phylo(NS_node) #convert to phylo object 
+#x <- tibble(label = as.phylo(pHA_RAXML)$tip.label, trait = HA_meta) #import meta data 
+NS_node_join <- full_join(NS_node, NS_meta, by = "label") #merge tree and metadata 
+NS_node_join <- as_tibble(NS_node_join) #convert to tibble
+
+NS_RAXML + geom_cladelab(data = NS_node_join, mapping = aes(node = node, label = lineage, color = lineage)) #plot tree with just tip colors
+
+#Additional Annotations with tips and node lables
+NS_RAXML_meta <- ggtree(NSnewick, aes(color=NS_node_join$lineage)) + 
+  scale_color_manual(values=c("blue", "red"))
+
+NSp1_pro_file <- "./tree_builds/Maryland_Vic-Yam_NS1_msa_annotation_NSp1_pro_alignment_RAxML_Tree.newick"
+NSp1_pro_msa_file <-"./tree_builds/Maryland_Vic-Yam_NS1_msa_annotation_NSp1_pro_alignment_q.fasta" #single quotes must be added to sample headers
+
+NSp1_pro_newick <- read.newick(NSp1_pro_file , node.label = "label")
+NSp1_pro_RAXML <-  ggtree(NSp1_pro_newick) + 
+                      theme_tree() + 
+                      geom_treescale(x=0.01, y = -8, fontsize = 3, offset.label = 1)#generate tree 
+
+NSp1_pro_RAXML #show without annotations
+
+
+#plot msa plot
+pNSp1_pro_RAXML_msa.1 <- msaplot(NSp1_pro_RAXML, fasta=NSp1_pro_msa_file, width = 6, color = ) # full msa
+pNSp1_pro_RAXML_msa.2 <- msaplot(NSp1_pro_RAXML, fasta=NSp1_pro_msa_file, window = c(1,10), width = 0.5, height = 2) #msa NSp1 aa 1-10
+pNSp1_pro_RAXML_msa.3 <- msaplot(NSp1_pro_RAXML, fasta=NSp1_pro_msa_file, window = c(107,127), width = 2, height = 2) #msa NSp1 aa 107-127
+pNSp1_pro_RAXML_msa.4 <- msaplot(NSp1_pro_RAXML, fasta=NSp1_pro_msa_file, window = c(130,140), width = 2, height = 2) #msa NSp1 aa 107-127
+pNSp1_pro_RAXML_msa.5 <- msaplot(NSp1_pro_RAXML, fasta=NSp1_pro_msa_file, window = c(1,10), width = 0.5, height = 2) + coord_polar(theta='y') #circular plot 
+
+#show plots 
+pNSp1_pro_RAXML_msa.1 + ggtitle("NS1 Protein Tree", subtitle = "With Complete Alignment rooted to B/Phuket/3073/2013")
+
+pNSp1_pro_RAXML_msa.2 + ggtitle("NS1 Protein Tree", subtitle = "Residues: 1-10 rooted to B/Phuket/3073/2013") 
+
+pNSp1_pro_RAXML_msa.3 + ggtitle("NS1 Protein Tree", subtitle = "Residues: 107-127 rooted to B/Phuket/3073/2013") 
+
+pNSp1_pro_RAXML_msa.4 + ggtitle("NS1 Protein Tree", subtitle = "Residues: 130-140 rooted to B/Phuket/3073/2013") 
+
+pNSp1_pro_RAXML_msa.5 + ggtitle("NS1 Protein Tree", subtitle = "Residues: 1-10 circular rooted to B/Phuket/3073/2013") 
+
+pNSp1_pro_RAXML_msa.2 + pNSp1_pro_RAXML_msa.5
+
+#ggsave("B_Maryland_NSp1-pro_tree_130-140_FINAL.jpeg", width = 11, height = 5) #saves pNSp1_pro_RAXML_msa.3  
+
+
+
+```
+
+
+
+ggtree MSA facet from:
+(link)[https://github.com/YuLab-SMU/ggmsa/issues/7]
+```{r ggtree with msa}
+
+library(ggmsa)
+library(Biostrings)
+library(ape)
+library(ggtree)
+
+NSp1_pro_msa_file <-"./tree_builds/Maryland_Vic-Yam_NS1_msa_annotation_NSp1_pro_alignment_q.fasta"
+
+NSp1_pro_seq <- readAAStringSet(NSp1_pro_msa_file)
+NSp1_pro_seq
+
+NSp1_window.1 = tidy_msa(NSp1_pro_seq, 1,20)
+NSp1_window.2 = tidy_msa(NSp1_pro_seq, 107,127)
+NSp1_window.3 = tidy_msa(NSp1_pro_seq, 130,140)
+
+
+NSp1_pro_RAXML +
+  geom_facet(geom = geom_msa, data = NSp1_window.1, panel = 'msa', font = NULL, color = "Chemistry_AA") + 
+  geom_facet(geom = ggmsa:::geom_logo, data = data, panel='msa', color = "Chemistry_AA", adaptive = T, height = 1)
+
+
+NSp1_pro_RAXML +
+  geom_facet(geom = geom_msa, data = NSp1_window.2, panel = 'msa', font = NULL, color = "Chemistry_AA") + 
+  geom_facet(geom = ggmsa:::geom_logo, data = data, panel='msa', color = "Chemistry_AA", adaptive = T, height = 1)
+
+
+NSp1_pro_RAXML +
+  geom_facet(geom = geom_msa, data = NSp1_window.3, panel = 'msa', font = NULL, color = "Chemistry_AA") + 
+  geom_facet(geom = ggmsa:::geom_logo, data = data, panel='msa', color = "Chemistry_AA", adaptive = T, height = 1)
+
+
+```
+
+### Make a msa identity plot of NSp1 
+
+## NSP2 Tree 
+
+STUPID quotes I hate it here...
+
+```{r NSP2 Tree}
+
+library(ggtree)
+
+NSp2_pro_file <- "./tree_builds/Maryland_Vic-Yam_NS1_msa_annotation_NSp2_pro_alignment_RAxML_Tree.newick"
+NSp2_pro_msa_file <-"./tree_builds/Maryland_Vic-Yam_NS1_msa_annotation_NSp2_pro_alignment_q.fasta" #single quotes must be added to sample headers
+
+NSp2_pro_newick <- read.newick(NSp2_pro_file , node.label = "label")
+NSp2_pro_RAXML <-  ggtree(NSp2_pro_newick) + 
+                      theme_tree() + 
+                      geom_treescale(x=0.01, y = -8, fontsize = 3, offset.label = 1)#generate tree 
+
+NSp2_pro_RAXML #show reww without annotations
+
+#plot msa plot
+pNSp2_pro_RAXML_msa.1 <- msaplot(NSp2_pro_RAXML, fasta=NSp2_pro_msa_file, width = 7, height = 2 ) # full msa
+pNSp2_pro_RAXML_msa.2 <- msaplot(NSp2_pro_RAXML, fasta=NSp2_pro_msa_file, window = c(1,10), width = 0.5, height = 2 ) #msa NSp1 aa 1-10
+pNSp2_pro_RAXML_msa.3 <- msaplot(NSp2_pro_RAXML, fasta=NSp2_pro_msa_file, window = c(20, 30), width = 2, height = 2) #msa NSp1 aa 1-50
+
+#show plots 
+pNSp2_pro_RAXML_msa.1 + ggtitle("NS2 Protein Tree", subtitle = "With Complete Alignment rooted to B/Phuket/3073/2013")
+pNSp2_pro_RAXML_msa.2 + ggtitle("NS2 Protein Tree", subtitle = "Residues: 1-10 rooted to B/Phuket/3073/2013")
+pNSp2_pro_RAXML_msa.3 + ggtitle("NS2 Protein Tree", subtitle = "Residues: 20-30 rooted to B/Phuket/3073/2013")
+
+
+#ggsave("B_Maryland_NSp1-pro_tree_130-140_FINAL.jpeg", width = 11, height = 5) #saves pNSp1_pro_RAXML_msa.3  
 
 ```
 
 
 
 
-
-
-
-
-
-
-
-# Merging NextClade HA Data with Metadata files
-
-* Lineages were determined by NextClade according to HA for both B/Victoria and B/Yamagata Lineages. 
-* Lineage metadata forall samples in HA and NA trees will be concatenated and merged. 
-
-
-```{r import and merge nextclade tables}
-
-#read om files
-file_HA_nc_meta <- "./IBV_Compare_Nextclade/B_Maryland_Victoria_nextclade/B_Maryland_Victoria_nextclade.tsv" #read file from path
-file_NS_nc_meta <- "./IBV_Compare_Nextclade/B_Maryland_Victoria_nextclade/B_Maryland_Yamagata_nextclade.tsv" #read file from path
-
-#import data 
-HA_nc_meta <- read_tsv(file_HA_nc_meta, col_select = c(seqName, clade))# read vic nexclade only seqName and clade
-HA_nc_meta <- read_csv(file_NS_nc_meta, col_select = c(seqName, clade))# read yam nextclade only seqName and clade
-
-
-
-
-
-```
 
