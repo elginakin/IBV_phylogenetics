@@ -1,2 +1,2 @@
 # IBV_phylogenetics
-Repository for assessing IBV Phylogenetic 
+Repository for tracking evolution of IBV sequences originating from Maryland
